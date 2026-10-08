@@ -1,0 +1,21 @@
+House Price Prediction: 7-Fold Cross-Validation Results
+=======================================================
+Selected model: Gradient Boosting
+R2, MAE, MSE, and RMSE are computed from pooled out-of-fold predictions.
+CV R2 is the unweighted mean of the seven validation-fold R2 values.
+R2 percentage is a regression score, not classification accuracy.
+
+R2 score by model:
+Gradient Boosting: 87.76%
+KNN Regressor: 75.46%
+Linear Regression: 64.08%
+SVR: -4.93%
+
+            Model        R2          MAE               MSE         RMSE     CV R2
+Gradient Boosting  0.877593 16281.882687  771996810.614293 27784.830585  0.867359
+    KNN Regressor  0.754576 21767.761644 1547839108.210301 39342.586445  0.750290
+Linear Regression  0.640780 19600.824043 2265524065.876384 47597.521636  0.600300
+              SVR -0.049335 55504.648437 6617932859.156649 81350.678296 -0.051258
+
+Submission rows: 1459
+Submission file: ML_Model/src/submission.csv
