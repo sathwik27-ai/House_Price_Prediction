@@ -1,101 +1,66 @@
-# House Price Prediction
+# Indian Urban House Price Prediction
 
-## Overview
-This project predicts residential sale prices from property characteristics using the Kaggle House Prices - Advanced Regression Techniques dataset. The notebook compares four regression models with a reproducible, leakage-safe seven-fold evaluation and creates test-set predictions.
-
-## Problem Statement
-Estimate `SalePrice` from features describing each home, such as quality, living area, neighborhood, basement, and garage attributes.
+This project analyzes the Indian Urban House Price Prediction dataset. Open `ML_Model/src/main.ipynb` and run all cells to view the data summary, regression metrics, price predictions, correlation matrix, and diagnostic visualizations inline.
 
 ## Dataset
-The data is the Kaggle House Prices competition dataset for residential homes in Ames, Iowa.
-- `train.csv` contains property features and the `SalePrice` target.
-- `test.csv` contains corresponding property features without `SalePrice`.
-- `SalePrice` is the target variable.
-- Supplied features describe property size, quality, location, construction, basement, and garage characteristics.
 
-## Machine Learning Workflow
-Data loading -> Data cleaning -> EDA -> Missing value handling -> Feature engineering -> Encoding -> Scaling where required -> Model training -> Model comparison -> Model selection -> Test prediction
+The archive supplies 80,000 labeled training properties, 20,000 unlabeled test properties, a sample submission, and column metadata. The continuous target is `Price_INR_Lakhs` (price in Indian rupee lakhs). `Property_ID` is used for row identification and excluded from model features. The notebook does not add synthetic records or use test targets.
 
-Preprocessing is fitted within each cross-validation training fold. Categorical features are imputed and one-hot encoded. Numeric features are median-imputed; scaling is applied to numeric columns for Linear Regression, KNN, and SVR, but not Gradient Boosting. The Kaggle `Id` is retained for output and excluded from model inputs.
+| File | Rows | Purpose |
+| --- | ---: | --- |
+| `ML_Model/data_set/train.csv` | 80,000 | Labeled training records |
+| `ML_Model/data_set/test.csv` | 20,000 | Unlabeled prediction records |
+| `ML_Model/data_set/metaData.csv` | 18 | Feature and target descriptions |
+| `ML_Model/data_set/sample_submission.csv` | 20,000 | Expected prediction ID/target format |
 
-## Models Evaluated
-### 1. Linear Regression
-A baseline regression model that estimates a linear relationship between features and price.
+The training file has no missing values, duplicate records, or duplicate property IDs. Train and test contain the same 16 predictors, and their property IDs do not overlap.
 
-### 2. K-Nearest Neighbors Regression
-Predicts price using the target values of nearby training observations.
+## Workflow
 
-### 3. Support Vector Regression
-Fits a regression function using support-vector-based optimization.
+The notebook loads the archive data, checks the schema, explores target and city distributions, computes numeric correlations, and compares four regression pipelines. Numeric features are median-imputed and standardized; categorical features are mode-imputed and one-hot encoded. Models predict `log1p(Price_INR_Lakhs)` and transform predictions back to lakhs.
 
-### 4. Gradient Boosting Regressor
-Builds an ensemble sequentially, with each tree improving on the preceding model.
+An 80/20 stratified split of the labeled training data reserves 16,000 properties for validation. Three-fold cross-validation uses a fixed 9,000-row sample from the training partition only. KNN uses at most 20,000 fitting rows and SVR at most 6,000 for practical runtime; Linear Regression and Gradient Boosting use the full training partition. Model selection uses the lowest mean CV RMSE. The test set is used only to display predictions; it has no target labels, so no test metrics are reported.
 
-## Model Comparison
-Because this is a regression task, model fit is measured with R2 rather than classification accuracy. The table reports pooled out-of-fold R2, MAE, MSE, and RMSE for all four models from the same shuffled seven-fold split. CV R2 is the mean validation-fold R2; the selection rule ranks by CV R2, then uses pooled out-of-fold RMSE as a tie-breaker.
+## Measured Results
 
-| Model | R2 Score | MAE | MSE | RMSE | CV R2 |
-|---|---:|---:|---:|---:|---:|
-| Linear Regression | 0.6408 | 19,600.82 | 2,265,524,065.88 | 47,597.52 | 0.6003 |
-| KNN Regressor | 0.7546 | 21,767.76 | 1,547,839,108.21 | 39,342.59 | 0.7503 |
-| SVR | -0.0493 | 55,504.65 | 6,617,932,859.16 | 81,350.68 | -0.0513 |
-| Gradient Boosting | 0.8776 | 16,281.88 | 771,996,810.61 | 27,784.83 | 0.8674 |
+Metrics below are from actual predictions on the 16,000-row validation split. Errors are in INR lakhs (MSE is lakhs squared); lower error is better.
 
-| Model | CV R2 |
-|---|---:|
-| Linear Regression | 0.6003 |
-| KNN Regressor | 0.7503 |
-| SVR | -0.0513 |
-| Gradient Boosting | 0.8674 |
+| Model | R² | MAE | MSE | RMSE | MAPE (%) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Gradient Boosting Regressor | 0.7695 | 33.3775 | 5,082.0551 | 71.2885 | 24.4253 |
+| Linear Regression | 0.7484 | 35.4261 | 5,546.8293 | 74.4770 | 26.1307 |
+| Support Vector Regression | 0.7013 | 40.8741 | 6,584.4815 | 81.1448 | 29.9635 |
+| KNN Regressor | 0.5033 | 53.1531 | 10,949.8005 | 104.6413 | 41.4011 |
 
-## Final Model
-Multiple regression models were evaluated, and Gradient Boosting Regressor was selected as the final model based on comparative performance. It had the highest mean seven-fold CV R2 (0.8674) and the lowest pooled out-of-fold MAE and RMSE among the four evaluated models. The selected pipeline is retrained on all training rows before predicting the test data.
+Gradient Boosting was selected with mean three-fold CV RMSE **70.0752 lakhs** (SD 2.1217) and mean CV R² **0.7637**. These scores are specific to the supplied dataset and fixed split/seed; they are not guarantees of real-world market accuracy.
 
-## Project Structure
-```text
-House-Price-Prediction/
-├── README.md
-├── requirements.txt
-├── .gitignore
-├── model_evaluation_report.txt
-└── ML_Model/
-    ├── data_set/
-    │   ├── train.csv
-    │   ├── test.csv
-    │   ├── sample_submission.csv
-    │   └── data_description.txt
-    └── src/
-        ├── main.ipynb
-        └── submission.csv
+## Visualizations
+
+Running the notebook displays seven figures: target distribution and area-price relationship; numeric feature-correlation heatmap; city-wise price distribution; actual versus predicted validation prices; residuals versus predictions; validation RMSE comparison; residual distribution; and Gradient Boosting feature importance. The correlation and feature-importance plots are associations, not causal explanations.
+
+## Run
+
+Install the root requirements, open the notebook in VS Code/Jupyter, and run all cells:
+
+```powershell
+python -m pip install -r requirements.txt
 ```
 
-## Technologies Used
-- Python
-- Pandas
-- NumPy
-- Scikit-learn
-- Matplotlib
-- Seaborn
-- Jupyter Notebook
-- Joblib
+The notebook displays all tables and figures inline. It does not save or overwrite fitted models, submissions, or reports. Test predictions are shown in the final table and can be exported separately if needed.
 
-## How to Run
-1. Clone or download the repository.
-2. Create a virtual environment with `python -m venv .venv`.
-3. Activate it (`.venv\\Scripts\\activate` on Windows or `source .venv/bin/activate` on macOS/Linux).
-4. Install dependencies with `python -m pip install -r requirements.txt`.
-5. Open `ML_Model/src/main.ipynb` in Jupyter or VS Code and run all cells.
-6. Check `ML_Model/src/submission.csv` and `model_evaluation_report.txt`.
+## Structure
 
-The notebook resolves bundled data and output paths relative to its own location; no local machine paths are required.
-
-## Output
-`ML_Model/src/submission.csv` contains 1,459 rows with `Id` and numeric `SalePrice` columns in the same ID order as `test.csv`.
-
-## Future Improvements
-- Tune hyperparameters with a nested or repeated cross-validation strategy.
-- Compare ensemble methods and target transformations.
-- Explore domain-informed feature engineering.
-- Deploy an interactive prediction interface.
-- Monitor model quality as new sale data becomes available.
+```text
+House-Price-Prediction-master/
+├── README.md
+├── requirements.txt
+└── ML_Model/
+    ├── data_set/
+    │   ├── metaData.csv
+    │   ├── sample_submission.csv
+    │   ├── test.csv
+    │   └── train.csv
+    └── src/
+        └── main.ipynb
+```
 
